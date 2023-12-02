@@ -11,7 +11,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
 
-import java.util.List;
 
 import static de.rieckpil.courses.book.review.RandomReviewParameterResolverExtension.RandomReview;
 import static org.junit.jupiter.api.Assertions.*;
@@ -51,13 +50,22 @@ class ReviewVerifierTest {
     assertEquals(expectedResult,result,"Review verifier did not detect bad reviews");
     //assertFalse(result,"Review verifier did not detect bad reviews");
   }
-
   @RepeatedTest(5)
   void shouldFailWhenRandomReviewQualityIsBad(@RandomReview String review) {
+
+    System.out.println(review);
+    boolean result = reviewVerifier.doesMeetQualityStandards(review);
+    assertFalse(result,"Review verifier did not detect bad reviews");
   }
 
   @Test
   void shouldPassWhenReviewIsGood() {
+
+    String review = "This book is great! I love it and I can recommend it to everyone" +
+      "who is interested in learning about testing";
+
+    boolean result = reviewVerifier.doesMeetQualityStandards(review);
+    assertTrue(result, "Review verifier did not detect good review");
   }
 
   @Test
