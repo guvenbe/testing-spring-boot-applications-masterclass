@@ -12,7 +12,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
 
 
+import java.util.List;
+
 import static de.rieckpil.courses.book.review.RandomReviewParameterResolverExtension.RandomReview;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(RandomReviewParameterResolverExtension.class)
@@ -70,9 +74,37 @@ class ReviewVerifierTest {
 
   @Test
   void shouldPassWhenReviewIsGoodHamcrest() {
+    String review = "This book is great! I love it and I can recommend it to everyone" +
+      "who is interested in learning about testing";
+
+    boolean result = reviewVerifier.doesMeetQualityStandards(review);
+    //assertTrue(result, "Review verifier did not detect good review");
+    assertThat("Review verifier did not detect good review",result, is(true));
+    assertThat("Review verifier did not detect good review",result, equalTo(true));
+    assertThat("Lorem ipsum", endsWith("ipsum"));
+    assertThat(List.of(1,2,3,4,5), hasSize(5));
+    assertThat(List.of(1,2,3,4,5), anyOf(hasSize(5), emptyIterable()));
+//    assertThat(List.of(1,2,3,4,5), allOf(hasSize(5), emptyIterable()));
   }
 
   @Test
   void shouldPassWhenReviewIsGoodAssertJ() {
+    String review = "This book is great! I love it and I can recommend it to everyone" +
+      "who is interested in learning about testing";
+
+    boolean result = reviewVerifier.doesMeetQualityStandards(review);
+    //assertTrue(result, "Review verifier did not detect good review");
+    Assertions.assertThat(result)
+      .withFailMessage("Review verifier did not detect good review")
+      .isTrue();
+    Assertions.assertThat(result).isTrue();
+    Assertions.assertThat(result)
+      .withFailMessage("Review verifier did not detect good review")
+      .isEqualTo(true);
+    Assertions.assertThat("Lorem ipsum").endsWith("ipsum");
+    Assertions.assertThat(List.of(1,2,3,4,5)).contains(3).isNotEmpty();
+    Assertions.assertThat(List.of(1,2,3,4,5)).hasSize(5);
+    Assertions.assertThat(List.of(1,2,3,4,5)).hasSizeBetween(0, 10);
+
   }
 }
