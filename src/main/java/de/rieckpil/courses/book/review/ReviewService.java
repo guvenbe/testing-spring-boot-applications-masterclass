@@ -41,6 +41,7 @@ public class ReviewService {
 
     if (reviewVerifier.doesMeetQualityStandards(bookReviewRequest.getReviewContent())) {
       Review review = new Review();
+//      Review review = new Review("");
 
       review.setBook(book);
       review.setContent(bookReviewRequest.getReviewContent());

@@ -11,6 +11,13 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
+
+import static org.junit.Assert.assertEquals;
+
 @DataJpaTest
 @Testcontainers(disabledWithoutDocker = true)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -20,7 +27,12 @@ class ReviewRepositoryNoInMemoryTest {
   static PostgreSQLContainer<?> container = new PostgreSQLContainer<>("postgres:12.3")
     .withDatabaseName("test")
     .withUsername("duke")
-    .withPassword("s3cret");
+    .withPassword("s3cret")
+    .withReuse(true);
+
+  static {
+    container.start();
+  }
 
   @DynamicPropertySource
   static void properties(DynamicPropertyRegistry registry) {
@@ -35,9 +47,25 @@ class ReviewRepositoryNoInMemoryTest {
   @Test
   @Sql(scripts = "/scripts/INIT_REVIEW_EACH_BOOK.sql")
   void shouldGetTwoReviewStatisticsWhenDatabaseContainsTwoBooksWithReview() {
+    List<ReviewStatistic> result = cut.getReviewStatistics();
+    assertEquals(3, cut.count());
+    assertEquals(2, cut.getReviewStatistics().size());
+
+    result.forEach(reviewStatistic -> {
+      System.out.println(reviewStatistic.getId() + " "
+        +reviewStatistic.getIsbn() + " "
+        + reviewStatistic.getAvg()+ " "
+        + reviewStatistic.getRatings());
+
+    });
+    assertEquals(2, result.get(0).getRatings().intValue());
+    assertEquals(2, result.get(0).getId().intValue());
+    assertEquals(new BigDecimal("3.00"), result.get(0).getAvg());
+
   }
 
   @Test
   void databaseShouldBeEmpty() {
+    assertEquals(0, cut.count());
   }
 }
