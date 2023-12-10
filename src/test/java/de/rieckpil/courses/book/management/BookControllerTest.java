@@ -52,10 +52,42 @@ class BookControllerTest {
 
   @Test
   void shouldNotReturnXML() throws Exception {
+    this.mockMvc.perform(get("/api/books")
+      .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_XML_VALUE))
+      .andExpect(status().isNotAcceptable())
+      .andDo(print());
   }
 
   @Test
   void shouldGetBooksWhenServiceReturnsBooks() throws Exception {
+    when(bookManagementService.getAllBooks()).thenReturn(List.of(
+      createBook(1L, "1234567890", "Java 11", "Duke", "Java 11", "Java", 100L, "Spring", "https://www.oreilly.com/library/cover/9780596527754/250w/"),
+      createBook(2L, "1234567891", "Java 12", "Duke", "Java 12", "Java", 100L, "Spring", "https://www.oreilly.com/library/cover/9780596527754/250w/"),
+      createBook(3L, "1234567892", "Java 13", "Duke", "Java 13", "Java", 100L, "Spring", "https://www.oreilly.com/library/cover/9780596527754/250w/")
+    ));
+
+    this.mockMvc.perform(get("/api/books")
+      .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE))
+      .andExpect(status().isOk())
+      .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+      .andExpect(jsonPath("$.size()", is(3)))
+      .andExpect(jsonPath("$[0].isbn", is("1234567890")))
+      .andExpect(jsonPath("$[0].title", is("Java 11")))
+      .andExpect(jsonPath("$[0].author", is("Duke")))
+      .andExpect(jsonPath("$[0].description", is("Java 11")))
+      .andExpect(jsonPath("$[0].genre", is("Java")))
+      .andExpect(jsonPath("$[0].pages", is(100)))
+      .andExpect(jsonPath("$[0].publisher", is("Spring")))
+      .andExpect(jsonPath("$[0].thumbnailUrl", is("https://www.oreilly.com/library/cover/9780596527754/250w/")))
+      .andExpect(jsonPath("$[1].isbn", is("1234567891")))
+      .andExpect(jsonPath("$[1].title", is("Java 12")))
+      .andExpect(jsonPath("$[1].author", is("Duke")))
+      .andExpect(jsonPath("$[1].description", is("Java 12")))
+      .andExpect(jsonPath("$[1].genre", is("Java")))
+      .andExpect(jsonPath("$[1].pages", is(100)))
+      .andExpect(jsonPath("$[1].publisher", is("Spring")))
+      .andExpect(jsonPath("$[1].thumbnailUrl", is("https://www.oreilly.com/library/cover/9780596527754/250w/")))
+      .andDo(print());
   }
 
   private Book createBook(Long id, String isbn, String title, String author, String description, String genre, Long pages, String publisher, String thumbnailUrl) {
