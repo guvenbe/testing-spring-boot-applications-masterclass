@@ -69,6 +69,7 @@ class BookSynchronizationListenerSliceNewTest {
   @MockBean
   private OpenLibraryApiClient openLibraryApiClient;
 
+
   @Test
   void shouldConsumeMessageWhenPayloadIsCorrect() {
   }

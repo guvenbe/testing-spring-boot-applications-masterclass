@@ -4,6 +4,7 @@ import io.awspring.cloud.autoconfigure.core.AwsAutoConfiguration;
 import io.awspring.cloud.autoconfigure.core.CredentialsProviderAutoConfiguration;
 import io.awspring.cloud.autoconfigure.core.RegionProviderAutoConfiguration;
 import io.awspring.cloud.autoconfigure.sqs.SqsAutoConfiguration;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +29,7 @@ import org.testcontainers.utility.DockerImageName;
 import java.io.IOException;
 import java.util.UUID;
 
+import static org.junit.Assert.assertNotNull;
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.SQS;
 
 @ExtendWith(SpringExtension.class)
@@ -81,18 +83,10 @@ class BookSynchronizationListenerSliceTest {
   @MockBean
   private OpenLibraryApiClient openLibraryApiClient;
 
-//  @TestConfiguration
-//  static class TestConfig {
-//    @Bean
-//    public Amaz amazonSQS() {
-//      return new AmazonSQSAsyncClientBuilder().standard()
-//        .withEndpointConfiguration(localStack.getEndpointConfiguration(SQS))
-//        .withCredentials(localStack.getDefaultCredentialsProvider())
-//        .build;
-//    }
-//  }
   @Test
   void shouldStartSQS() {
+    assertNotNull(cut);
+
   }
 
   @Test
