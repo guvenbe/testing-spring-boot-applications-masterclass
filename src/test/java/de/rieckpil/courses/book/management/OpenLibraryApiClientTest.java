@@ -28,7 +28,9 @@ class OpenLibraryApiClientTest {
   private OpenLibraryApiClient cut;
 
   private static final String ISBN = "9780596004651";
-  protected static String VALID_RESPONSE;
+
+  private static String VALID_RESPONSE;
+
   static {
     try {
       VALID_RESPONSE = new String(OpenLibraryApiClientTest.class
@@ -41,26 +43,31 @@ class OpenLibraryApiClientTest {
   }
 
 
-
   @BeforeEach
   void setUp() throws IOException {
     HttpClient httpClient = HttpClient.create()
       .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 2_000)
       .doOnConnected(connection ->
-        connection.addHandlerLast(new ReadTimeoutHandler(2))
-          .addHandlerLast(new WriteTimeoutHandler(2)));
+        connection
+          .addHandlerLast(new ReadTimeoutHandler(1))
+          .addHandlerLast(new WriteTimeoutHandler(1)));
 
     this.mockWebServer = new MockWebServer();
     this.mockWebServer.start();
 
-   this.cut = new OpenLibraryApiClient(
-     WebClient.builder()
-      .clientConnector(new ReactorClientHttpConnector(httpClient))
-      .baseUrl(this.mockWebServer.url("/").toString())
-      .build());
-
-
+    this.cut =
+      new OpenLibraryApiClient(
+        WebClient.builder()
+          .clientConnector(new ReactorClientHttpConnector(httpClient))
+          .baseUrl(this.mockWebServer.url("/").toString())
+          .build());
   }
+
+  @AfterEach
+  void shutdown() throws IOException {
+    this.mockWebServer.shutdown();
+  }
+
   @Test
   void notNull() {
     assertNotNull(cut);
@@ -69,12 +76,63 @@ class OpenLibraryApiClientTest {
 
   @Test
   void shouldReturnBookWhenResultIsSuccess() throws InterruptedException {
-    MockResponse mockResponse = new MockResponse()
-      .addHeader("Content-Type", "application/json charset=utf-8")
-      .setBody(VALID_RESPONSE);
+
+    MockResponse mockResponse =
+      new MockResponse()
+        .addHeader("Content-Type", "application/json; charset=utf-8")
+        .setBody(VALID_RESPONSE);
 
     this.mockWebServer.enqueue(mockResponse);
 
+    Book result = cut.fetchMetadataForBook(ISBN);
+
+    assertEquals("9780596004651", result.getIsbn());
+    assertEquals("Head first Java", result.getTitle());
+    assertEquals("https://covers.openlibrary.org/b/id/388761-S.jpg", result.getThumbnailUrl());
+    assertEquals("Kathy Sierra", result.getAuthor());
+    assertEquals(
+      "Your brain on Java--a learner's guide--Cover.Includes index.", result.getDescription());
+    assertEquals("Java (Computer program language)", result.getGenre());
+    assertEquals("O'Reilly", result.getPublisher());
+    assertEquals(619, result.getPages());
+
+    assertNull(result.getId());
+
+    RecordedRequest recordedRequest = this.mockWebServer.takeRequest();
+    assertEquals("/api/books?jscmd=data&format=json&bibkeys=" + ISBN, recordedRequest.getPath());
+  }
+
+  @Test
+  void shouldReturnBookWhenResultIsSuccessButLackingAllInformation() {
+    String response =
+      """
+        {
+         "9780596004651": {
+           "publishers": [
+             {
+               "name": "O'Reilly"
+             }
+           ],
+           "title": "Head second Java",
+           "authors": [
+             {
+               "url": "https://openlibrary.org/authors/OL1400543A/Kathy_Sierra",
+               "name": "Kathy Sierra"
+             }
+           ],
+           "number_of_pages": 42,
+           "cover": {
+             "small": "https://covers.openlibrary.org/b/id/388761-S.jpg",
+             "large": "https://covers.openlibrary.org/b/id/388761-L.jpg",
+             "medium": "https://covers.openlibrary.org/b/id/388761-M.jpg"
+           }
+          }
+        }""";
+
+    this.mockWebServer.enqueue(new MockResponse()
+      .addHeader("Content-Type", "application/json; charset=utf-8")
+      .setResponseCode(200)
+      .setBody(response));
     Book result = cut.fetchMetadataForBook(ISBN);
     assertEquals(ISBN, result.getIsbn());
     assertEquals("Head second Java", result.getTitle());
@@ -85,17 +143,41 @@ class OpenLibraryApiClientTest {
     assertEquals("n.A", result.getDescription());
     assertEquals("n.A", result.getGenre());
     assertNull(result.getId());
-  }
 
-  @Test
-  void shouldReturnBookWhenResultIsSuccessButLackingAllInformation() {
+
   }
 
   @Test
   void shouldPropagateExceptionWhenRemoteSystemIsDown() {
+    assertThrows(RuntimeException.class, () -> {
+      this.mockWebServer.enqueue(new MockResponse()
+        .setResponseCode(500)
+        .setBody("sorry system is down :("));
+      cut.fetchMetadataForBook(ISBN);
+
+    });
   }
+
 
   @Test
   void shouldRetryWhenRemoteSystemIsSlowOrFailing() {
+    this.mockWebServer.enqueue(new MockResponse()
+      .setResponseCode(500)
+      .setBody("sorry system is down :("));
+
+    this.mockWebServer.enqueue(new MockResponse()
+      .addHeader("Content-Type", "application/json; charset=utf-8")
+      .setResponseCode(200)
+      .setBody(VALID_RESPONSE)
+      .setBodyDelay(2, TimeUnit.SECONDS));
+
+    this.mockWebServer.enqueue(new MockResponse()
+      .addHeader("Content-Type", "application/json; charset=utf-8")
+      .setResponseCode(200)
+      .setBody(VALID_RESPONSE));
+
+    Book result = cut.fetchMetadataForBook(ISBN);
+    assertEquals(ISBN, result.getIsbn());
+    assertNull(result.getId());
   }
 }
