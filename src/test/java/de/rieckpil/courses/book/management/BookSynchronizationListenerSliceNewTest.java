@@ -37,6 +37,9 @@ class BookSynchronizationListenerSliceNewTest {
       .withServices(LocalStackContainer.Service.SQS)
       .withLogConsumer(new Slf4jLogConsumer(LOG));
 
+  static {
+    localStack.start();
+  }
   private static final String QUEUE_NAME = UUID.randomUUID().toString();
   private static final String ISBN = "9780596004651";
 

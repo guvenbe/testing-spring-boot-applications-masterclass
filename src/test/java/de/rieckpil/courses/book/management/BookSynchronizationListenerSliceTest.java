@@ -12,7 +12,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -47,11 +49,15 @@ class BookSynchronizationListenerSliceTest {
     .withServices(LocalStackContainer.Service.SQS)
     // can be removed with version 0.12.17 as LocalStack now has multi-region support https://docs.localstack.cloud/localstack/configuration/#deprecated
     // .withEnv("DEFAULT_REGION", "eu-central-1")
+    .withReuse(true)
     .withLogConsumer(new Slf4jLogConsumer(LOG));
 
   private static final String QUEUE_NAME = UUID.randomUUID().toString();
   private static final String ISBN = "9780596004651";
 
+  static {
+    localStack.start();
+  }
   @BeforeAll
   static void beforeAll() throws IOException, InterruptedException {
     localStack.execInContainer("awslocal", "sqs", "create-queue", "--queue-name", QUEUE_NAME);
@@ -75,6 +81,16 @@ class BookSynchronizationListenerSliceTest {
   @MockBean
   private OpenLibraryApiClient openLibraryApiClient;
 
+//  @TestConfiguration
+//  static class TestConfig {
+//    @Bean
+//    public Amaz amazonSQS() {
+//      return new AmazonSQSAsyncClientBuilder().standard()
+//        .withEndpointConfiguration(localStack.getEndpointConfiguration(SQS))
+//        .withCredentials(localStack.getDefaultCredentialsProvider())
+//        .build;
+//    }
+//  }
   @Test
   void shouldStartSQS() {
   }

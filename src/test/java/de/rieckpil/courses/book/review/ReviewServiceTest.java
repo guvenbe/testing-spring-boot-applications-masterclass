@@ -39,18 +39,59 @@ class ReviewServiceTest {
 
   @Test
   void shouldNotBeNull() {
+    assertNotNull(reviewRepository);
+    assertNotNull(mockedReviewVerifier);
+    assertNotNull(userService);
+    assertNotNull(bookRepository);
+    assertNotNull(cut);
   }
 
   @Test
   @DisplayName("Write english sentence")
   void shouldThrowExceptionWhenReviewedBookIsNotExisting() {
+    when(bookRepository.findByIsbn(ISBN)).thenReturn(null);
+
+    assertThrows(IllegalArgumentException.class, () -> {
+      cut.createBookReview(ISBN, null, USERNAME, EMAIL);
+    });
+
+    verify(bookRepository, times(1)).findByIsbn(ISBN);
+    verifyNoInteractions(mockedReviewVerifier);
+    verifyNoInteractions(userService);
+    verifyNoInteractions(reviewRepository);
   }
 
   @Test
   void shouldRejectReviewWhenReviewQualityIsBad() {
+    BookReviewRequest bookReviewRequest = new BookReviewRequest("Title", "CONTENT", 1);
+    when(bookRepository.findByIsbn(ISBN)).thenReturn(new Book());
+    when(mockedReviewVerifier.doesMeetQualityStandards(bookReviewRequest.getReviewContent())).thenReturn(false);
+    assertThrows(BadReviewQualityException.class, () -> {
+      cut.createBookReview(ISBN, bookReviewRequest, USERNAME, EMAIL);
+      verifyNoInteractions(reviewRepository);
+    });
+
+
   }
 
   @Test
   void shouldStoreReviewWhenReviewQualityIsGoodAndBookIsPresent() {
+    BookReviewRequest bookReviewRequest =
+      new BookReviewRequest("Title", "GOOD CONTENT", 1);
+
+    when(bookRepository.findByIsbn(ISBN)).thenReturn(new Book());
+    when(mockedReviewVerifier.doesMeetQualityStandards(bookReviewRequest.getReviewContent())).thenReturn(true);
+    when(userService.getOrCreateUser(USERNAME, EMAIL)).thenReturn(new User());
+    when(reviewRepository.save(any(Review.class)))
+      .thenAnswer(invocation -> {
+        Review reviewToSave = invocation.getArgument(0);
+        reviewToSave.setId(42L);
+        return reviewToSave;
+      });
+
+    Long result = cut.createBookReview(ISBN, bookReviewRequest, USERNAME, EMAIL);
+    assertEquals(42L, result);
+
+    verify(reviewRepository, times(1)).save(ArgumentMatchers.any(Review.class));
   }
 }
