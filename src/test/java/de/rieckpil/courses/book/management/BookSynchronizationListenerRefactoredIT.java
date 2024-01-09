@@ -25,6 +25,14 @@ class BookSynchronizationListenerRefactoredIT extends AbstractIntegrationTest {
 
   @Test
   void shouldGetSuccessWhenClientIsAuthenticated() throws JOSEException {
+    this.webTestClient
+      .get()
+      .uri("/api/books/reviews/statistics")
+      .header(HttpHeaders.AUTHORIZATION, "Bearer " + getSignedJWT())
+      .exchange()
+      .expectStatus().is2xxSuccessful();
+
+
   }
 
   @Test
