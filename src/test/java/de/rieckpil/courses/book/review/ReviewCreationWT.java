@@ -89,6 +89,8 @@ class ReviewCreationWT extends AbstractWebTest {
 
   @Test
   void shouldCreateReviewAndDisplayItInReviewList() {
+    assertNotNull(bookRepository);
+    open("localhost:8080/");
   }
 
   private void createBook() {
