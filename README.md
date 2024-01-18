@@ -190,6 +190,7 @@ Run **all tests** together:
 Skip all tests (don't do this at home):
 
 1. Execute `./mvnw -DskipTests=true verify`
+2. For profile ./mvnw -P webtests -Dskip.npm  verify
 
 # Troubleshooting Setup Issues
 
